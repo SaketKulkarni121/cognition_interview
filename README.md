@@ -126,7 +126,7 @@ These rules are enforced on the server (`src/modules/refunds/workflow.ts`, `src/
 
 `src/lib/payments/types.ts` defines `PaymentProvider.createRefund({ idempotencyKey, amount, currency, transactionReference })`. `getPaymentProvider()` (`src/lib/payments/index.ts`) picks the implementation from `PAYMENT_PROVIDER`. The default, and the only option today, is `mock` (`MockPaymentProvider`). It validates the amount, honours idempotency keys, adds a small delay, and returns a `mock_re_…` ID. To connect a real provider, implement the interface and add a case to `getPaymentProvider()`. Business logic doesn't change.
 
-Seed data: 17 fictional cases. 6 pending (one outside the 30-day window, one a second refund on an already partly refunded purchase), 3 escalated, 5 approved (one with a **failed** payout, so you can try the Admin retry), and 3 rejected.
+Seed data: 17 fictional cases. 7 pending (one outside the 30-day window, one a second refund on an already partly refunded purchase), 3 escalated, 4 approved (one with a **failed** payout, so you can try the Admin retry), and 3 rejected.
 
 ## API
 
