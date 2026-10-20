@@ -3,6 +3,7 @@
  * Names, addresses, document numbers and companies are invented.
  */
 import { PrismaClient } from "@prisma/client";
+import { seedFlags } from "./seed-flags";
 import { seedRefunds } from "./seed-refunds";
 
 const prisma = new PrismaClient();
@@ -78,6 +79,8 @@ function docNumber(type: string, i: number) {
 
 async function main() {
   await prisma.auditLog.deleteMany();
+  await prisma.featureFlagEnvironment.deleteMany();
+  await prisma.featureFlag.deleteMany();
   await prisma.refundPayout.deleteMany();
   await prisma.refundDecision.deleteMany();
   await prisma.refundNote.deleteMany();
@@ -183,7 +186,8 @@ async function main() {
   }
 
   const refunds = await seedRefunds(prisma, u);
-  console.log(`Seeded ${users.length} users, ${apps.length} fictional KYC applications and ${refunds} fictional refund cases.`);
+  const flagCount = await seedFlags(prisma, u);
+  console.log(`Seeded ${users.length} users, ${apps.length} fictional KYC applications, ${refunds} fictional refund cases and ${flagCount} feature flags.`);
 }
 
 main()

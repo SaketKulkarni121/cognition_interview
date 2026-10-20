@@ -10,3 +10,5 @@ export * from "./table";
 export * from "./description-list";
 export * from "./pagination";
 export * from "./stat-card";
+export * from "./segmented-links";
+export * from "./switch";

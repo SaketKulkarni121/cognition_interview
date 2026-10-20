@@ -17,7 +17,18 @@ export type FilterDef = {
  * URL-synced search box + select filters for list pages. State lives in the
  * query string so filtered views can be bookmarked and shared.
  */
-export function FilterBar({ searchPlaceholder, searchLabel, filters }: { searchPlaceholder: string; searchLabel: string; filters: FilterDef[] }) {
+export function FilterBar({
+  searchPlaceholder,
+  searchLabel,
+  filters,
+  preserve = [],
+}: {
+  searchPlaceholder: string;
+  searchLabel: string;
+  filters: FilterDef[];
+  /** Query params kept when the user clicks Clear (e.g. a selected environment). */
+  preserve?: string[];
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -94,7 +105,12 @@ export function FilterBar({ searchPlaceholder, searchLabel, filters }: { searchP
             onClick={() => {
               setQ("");
               setPushedQ(null);
-              navigate(new URLSearchParams());
+              const kept = new URLSearchParams();
+              for (const k of preserve) {
+                const v = params.get(k);
+                if (v) kept.set(k, v);
+              }
+              navigate(kept);
             }}
           >
             <X className="h-4 w-4" /> Clear
