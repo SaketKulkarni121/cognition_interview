@@ -1,0 +1,134 @@
+// Internal Operations Platform — data model.
+// SQLite does not support native enums, so status/role/action columns are
+// strings validated in the application layer (see src/modules/kyc/workflow.ts
+// and src/lib/auth/permissions.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String // ADMIN | ANALYST | VIEWER
+  title     String?
+  createdAt DateTime @default(now())
+
+  assignedApplications KycApplication[] @relation("AssignedReviewer")
+  notes                KycNote[]
+  decisions            KycDecision[]
+  auditLogs            AuditLog[]
+}
+
+model KycApplication {
+  id                    String    @id @default(cuid())
+  reference             String    @unique
+  status                String    @default("SUBMITTED")
+  firstName             String
+  lastName              String
+  email                 String
+  phone                 String
+  dateOfBirth           DateTime
+  nationality           String
+  addressLine1          String
+  addressLine2          String?
+  city                  String
+  region                String
+  postalCode            String
+  country               String
+  occupation            String
+  employer              String?
+  sourceOfFunds         String
+  expectedMonthlyVolume String
+  accountPurpose        String
+  taxIdLast4            String
+  submittedAt           DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  decidedAt             DateTime?
+
+  assignedReviewerId String?
+  assignedReviewer   User?   @relation("AssignedReviewer", fields: [assignedReviewerId], references: [id])
+
+  documents KycDocument[]
+  notes     KycNote[]
+  decisions KycDecision[]
+
+  @@index([status])
+  @@index([assignedReviewerId])
+  @@index([submittedAt])
+}
+
+model KycDocument {
+  id             String    @id @default(cuid())
+  applicationId  String
+  type           String // PASSPORT | DRIVERS_LICENSE | NATIONAL_ID | PROOF_OF_ADDRESS
+  fileName       String
+  documentNumber String?
+  issuingCountry String?
+  issuedAt       DateTime?
+  expiresAt      DateTime?
+  uploadedAt     DateTime  @default(now())
+
+  application KycApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model KycNote {
+  id            String   @id @default(cuid())
+  applicationId String
+  authorId      String
+  body          String
+  createdAt     DateTime @default(now())
+
+  application KycApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  author      User           @relation(fields: [authorId], references: [id])
+
+  @@index([applicationId])
+}
+
+model KycDecision {
+  id            String   @id @default(cuid())
+  applicationId String
+  reviewerId    String
+  action        String // APPROVE | REJECT | REQUEST_INFO | ESCALATE | RESUME_REVIEW
+  fromStatus    String
+  toStatus      String
+  reason        String
+  createdAt     DateTime @default(now())
+
+  application KycApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reviewer    User           @relation(fields: [reviewerId], references: [id])
+
+  @@index([applicationId])
+}
+
+// Append-only, platform-wide audit trail shared by every internal app.
+// Actor name/role are snapshotted so history stays accurate if users change.
+model AuditLog {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  actorId    String?
+  actorName  String
+  actorRole  String
+  module     String // e.g. "kyc"
+  action     String // e.g. "kyc.application.approved"
+  entityType String
+  entityId   String
+  entityRef  String?
+  fromStatus String?
+  toStatus   String?
+  reason     String?
+  metadata   String? // JSON
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([module, createdAt])
+  @@index([entityType, entityId])
+}
