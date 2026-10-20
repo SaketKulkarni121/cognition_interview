@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { Alert, Card, CardBody, CardHeader } from "@/components/ui";
+import { Alert, Card, CardBody, CardHeader, DetailField, DetailSection } from "@/components/ui";
 import { AssignmentControl } from "@/components/kyc/assignment-control";
 import { DecisionPanel } from "@/components/kyc/decision-panel";
 import { DocumentsGallery } from "@/components/kyc/documents-gallery";
-import { HistoryTimeline } from "@/components/kyc/history-timeline";
-import { NotesPanel } from "@/components/kyc/notes-panel";
+import { HistoryTimeline } from "@/components/audit/history-timeline";
+import { NotesPanel } from "@/components/workflow/notes-panel";
 import { StatusBadge } from "@/components/kyc/status-badge";
 import { requireUser } from "@/lib/auth/session";
 import { NotFoundError } from "@/lib/errors";
@@ -16,24 +16,6 @@ import { DOCUMENT_TYPE_LABELS } from "@/modules/kyc/documents";
 import { ACTION_META, STATUS_META, isTerminal, type KycAction, type KycStatus } from "@/modules/kyc/workflow";
 
 export const metadata = { title: "Review application" };
-
-function Field({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
-  return (
-    <div>
-      <dt className="text-xs font-medium text-slate-500">{label}</dt>
-      <dd className={`mt-0.5 text-sm text-slate-900 ${mono ? "font-mono" : ""}`}>{value || "—"}</dd>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">{title}</h3>
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">{children}</dl>
-    </div>
-  );
-}
 
 function age(dob: Date) {
   const diff = Date.now() - new Date(dob).getTime();
@@ -133,16 +115,16 @@ export default async function ReviewPage(props: PageProps<"/kyc/[id]">) {
           <Card>
             <CardHeader title="Customer profile" description="Information the customer entered on their application." />
             <CardBody className="space-y-6">
-              <Section title="Personal details">
-                <Field label="Full name" value={`${app.firstName} ${app.lastName}`} />
-                <Field label="Date of birth" value={`${formatDate(app.dateOfBirth)} (age ${age(app.dateOfBirth)})`} />
-                <Field label="Nationality" value={app.nationality} />
-                <Field label="Tax ID" value={`•••• ${app.taxIdLast4}`} mono />
-              </Section>
-              <Section title="Contact & address">
-                <Field label="Email" value={app.email} />
-                <Field label="Phone" value={app.phone} />
-                <Field
+              <DetailSection title="Personal details">
+                <DetailField label="Full name" value={`${app.firstName} ${app.lastName}`} />
+                <DetailField label="Date of birth" value={`${formatDate(app.dateOfBirth)} (age ${age(app.dateOfBirth)})`} />
+                <DetailField label="Nationality" value={app.nationality} />
+                <DetailField label="Tax ID" value={`•••• ${app.taxIdLast4}`} mono />
+              </DetailSection>
+              <DetailSection title="Contact & address">
+                <DetailField label="Email" value={app.email} />
+                <DetailField label="Phone" value={app.phone} />
+                <DetailField
                   label="Residential address"
                   value={
                     <>
@@ -155,14 +137,14 @@ export default async function ReviewPage(props: PageProps<"/kyc/[id]">) {
                     </>
                   }
                 />
-              </Section>
-              <Section title="Employment & account use">
-                <Field label="Occupation" value={app.occupation} />
-                <Field label="Employer" value={app.employer ?? "Self-employed / not provided"} />
-                <Field label="Source of funds" value={app.sourceOfFunds} />
-                <Field label="Expected monthly volume" value={app.expectedMonthlyVolume} />
-                <Field label="Purpose of account" value={app.accountPurpose} />
-              </Section>
+              </DetailSection>
+              <DetailSection title="Employment & account use">
+                <DetailField label="Occupation" value={app.occupation} />
+                <DetailField label="Employer" value={app.employer ?? "Self-employed / not provided"} />
+                <DetailField label="Source of funds" value={app.sourceOfFunds} />
+                <DetailField label="Expected monthly volume" value={app.expectedMonthlyVolume} />
+                <DetailField label="Purpose of account" value={app.accountPurpose} />
+              </DetailSection>
             </CardBody>
           </Card>
 
@@ -204,7 +186,7 @@ export default async function ReviewPage(props: PageProps<"/kyc/[id]">) {
           )}
 
           <NotesPanel
-            applicationId={app.id}
+            endpoint={`/api/kyc/applications/${app.id}/notes`}
             canNote={permissions.canNote}
             notes={app.notes.map((n) => ({ id: n.id, body: n.body, createdAt: n.createdAt.toISOString(), author: { name: n.author.name, title: n.author.title } }))}
           />

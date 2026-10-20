@@ -5,10 +5,11 @@ import { INTERNAL_APPS } from "@/config/apps";
 import { requireUser } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { getQueueStats } from "@/modules/kyc/service";
+import { getDashboardStats } from "@/modules/refunds/service";
 
 export default async function HomePage() {
   const user = await requireUser();
-  const stats = await getQueueStats(user);
+  const [stats, refundStats] = await Promise.all([getQueueStats(user), can(user, "refunds:read") ? getDashboardStats(user) : null]);
   const pending = (stats.byStatus.SUBMITTED ?? 0) + (stats.byStatus.IN_REVIEW ?? 0);
   const apps = INTERNAL_APPS.filter((a) => a.id !== "home");
 
@@ -33,6 +34,8 @@ export default async function HomePage() {
                   <Badge>No access</Badge>
                 ) : app.id === "kyc" ? (
                   <Badge tone="info">{pending} awaiting review</Badge>
+                ) : app.id === "refunds" && refundStats ? (
+                  <Badge tone="info">{refundStats.pending + refundStats.escalated} open</Badge>
                 ) : null}
               </div>
               <h2 className="mt-4 font-semibold text-slate-900">{app.name}</h2>

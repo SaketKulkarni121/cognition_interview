@@ -3,6 +3,7 @@
  * Names, addresses, document numbers and companies are invented.
  */
 import { PrismaClient } from "@prisma/client";
+import { seedRefunds } from "./seed-refunds";
 
 const prisma = new PrismaClient();
 
@@ -77,13 +78,18 @@ function docNumber(type: string, i: number) {
 
 async function main() {
   await prisma.auditLog.deleteMany();
+  await prisma.refundPayout.deleteMany();
+  await prisma.refundDecision.deleteMany();
+  await prisma.refundNote.deleteMany();
+  await prisma.refundCase.deleteMany();
+  await prisma.paymentTransaction.deleteMany();
   await prisma.kycDecision.deleteMany();
   await prisma.kycNote.deleteMany();
   await prisma.kycDocument.deleteMany();
   await prisma.kycApplication.deleteMany();
   await prisma.user.deleteMany();
 
-  const u = {} as Record<UserKey, { id: string; name: string; role: string }>;
+  const u = {} as Record<UserKey, { id: string; name: string; role: string; title: string | null }>;
   for (const x of users) {
     const { key, ...data } = x;
     u[key] = await prisma.user.create({ data });
@@ -176,7 +182,8 @@ async function main() {
     await prisma.kycApplication.update({ where: { id: app.id }, data: { status, assignedReviewerId: reviewer, decidedAt } });
   }
 
-  console.log(`Seeded ${users.length} users and ${apps.length} fictional KYC applications.`);
+  const refunds = await seedRefunds(prisma, u);
+  console.log(`Seeded ${users.length} users, ${apps.length} fictional KYC applications and ${refunds} fictional refund cases.`);
 }
 
 main()

@@ -1,4 +1,4 @@
-import { ClipboardCheck, LayoutGrid, ScrollText, Scale, Banknote, type LucideIcon } from "lucide-react";
+import { ClipboardCheck, LayoutGrid, ScrollText, Scale, Banknote, Receipt, type LucideIcon } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
 
 /**
@@ -25,6 +25,15 @@ export const INTERNAL_APPS: InternalApp[] = [
     href: "/kyc",
     icon: ClipboardCheck,
     permission: "kyc:read",
+    status: "live",
+  },
+  {
+    id: "refunds",
+    name: "Refunds",
+    description: "Investigate customer refund requests and approve, reject, or escalate them.",
+    href: "/refunds",
+    icon: Receipt,
+    permission: "refunds:read",
     status: "live",
   },
   {

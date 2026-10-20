@@ -85,8 +85,7 @@ export const TRANSITIONS: Record<KycAction, Partial<Record<KycStatus, KycStatus>
   RESUME_REVIEW: { INFO_REQUESTED: "IN_REVIEW" },
 };
 
-export const MIN_REASON_LENGTH = 10;
-export const MAX_REASON_LENGTH = 2000;
+export { MIN_REASON_LENGTH, MAX_REASON_LENGTH } from "@/lib/validation";
 
 export function isKycStatus(v: unknown): v is KycStatus {
   return typeof v === "string" && (KYC_STATUSES as readonly string[]).includes(v);

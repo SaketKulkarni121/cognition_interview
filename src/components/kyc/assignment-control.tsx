@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, UserMinus, UserPlus } from "lucide-react";
 import { Avatar, Button, Select } from "@/components/ui";
-import { apiPost } from "./api-client";
+import { apiPost } from "@/lib/api-client";
 
 type Reviewer = { id: string; name: string; title: string | null };
 

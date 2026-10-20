@@ -1,13 +1,10 @@
 import { z } from "zod";
-import { KYC_ACTIONS, KYC_STATUSES, MAX_REASON_LENGTH, MIN_REASON_LENGTH } from "./workflow";
+import { noteSchema as sharedNoteSchema, reasonSchema } from "@/lib/validation";
+import { KYC_ACTIONS, KYC_STATUSES } from "./workflow";
 
 export const decisionSchema = z.object({
   action: z.enum(KYC_ACTIONS, { message: "Choose a valid action" }),
-  reason: z
-    .string({ message: "An explanation is required" })
-    .trim()
-    .min(MIN_REASON_LENGTH, `Please explain your decision (at least ${MIN_REASON_LENGTH} characters)`)
-    .max(MAX_REASON_LENGTH, `Explanation must be under ${MAX_REASON_LENGTH} characters`),
+  reason: reasonSchema,
   expectedStatus: z.enum(KYC_STATUSES).optional(),
 });
 export type DecisionInput = z.infer<typeof decisionSchema>;
@@ -17,9 +14,7 @@ export const assignSchema = z.object({
 });
 export type AssignInput = z.infer<typeof assignSchema>;
 
-export const noteSchema = z.object({
-  body: z.string().trim().min(1, "Note cannot be empty").max(MAX_REASON_LENGTH),
-});
+export const noteSchema = sharedNoteSchema;
 export type NoteInput = z.infer<typeof noteSchema>;
 
 export const listQuerySchema = z.object({

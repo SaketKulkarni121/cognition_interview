@@ -52,3 +52,8 @@ export function initials(name: string) {
     .map((p) => p[0]!.toUpperCase())
     .join("");
 }
+
+/** Format integer minor units (cents) as currency, e.g. 12999 -> "$129.99". */
+export function formatMoney(cents: number, currency = "USD") {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
+}

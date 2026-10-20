@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { db, type DbClient } from "@/lib/db";
 import { recordAudit } from "@/lib/audit";
+import { parseInput } from "@/lib/validation";
 import { assertCan, can, type SessionUser } from "@/lib/auth/permissions";
 import { ConflictError, ForbiddenError, InvalidTransitionError, NotFoundError, ValidationError } from "@/lib/errors";
 import {
@@ -36,15 +37,9 @@ export const PAGE_SIZE = 12;
 
 const reviewerSelect = { select: { id: true, name: true, role: true, title: true } } as const;
 
-function parse<T>(schema: { safeParse: (v: unknown) => { success: true; data: T } | { success: false; error: { issues: { message: string }[] } } }, input: unknown): T {
-  const r = schema.safeParse(input);
-  if (!r.success) throw new ValidationError(r.error.issues[0]?.message ?? "Invalid input", r.error.issues);
-  return r.data;
-}
-
 export async function listApplications(actor: SessionUser, rawQuery: Partial<ListQuery> = {}, client: DbClient = db) {
   assertCan(actor, "kyc:read");
-  const query = parse(listQuerySchema, rawQuery);
+  const query = parseInput(listQuerySchema, rawQuery);
   const page = query.page ?? 1;
   const where: Prisma.KycApplicationWhereInput = {};
 
@@ -143,7 +138,7 @@ export async function listReviewers(actor: SessionUser, client: DbClient = db) {
 
 export async function assignApplication(actor: SessionUser, id: string, input: AssignInput, client = db) {
   assertCan(actor, "kyc:assign:self", "Your role cannot assign applications.");
-  const { reviewerId } = parse(assignSchema, input);
+  const { reviewerId } = parseInput(assignSchema, input);
   return client.$transaction(async (tx) => {
     const app = await tx.kycApplication.findUnique({ where: { id } });
     if (!app) throw new NotFoundError("Application not found");
@@ -186,7 +181,7 @@ export async function assignApplication(actor: SessionUser, id: string, input: A
 
 export async function decide(actor: SessionUser, id: string, input: DecisionInput, client = db) {
   assertCan(actor, "kyc:decide", "Your role has read-only access.");
-  const { action, reason, expectedStatus } = parse(decisionSchema, input);
+  const { action, reason, expectedStatus } = parseInput(decisionSchema, input);
   return client.$transaction(async (tx) => {
     const app = await tx.kycApplication.findUnique({ where: { id } });
     if (!app) throw new NotFoundError("Application not found");
@@ -232,7 +227,7 @@ export async function decide(actor: SessionUser, id: string, input: DecisionInpu
 
 export async function addNote(actor: SessionUser, id: string, input: NoteInput, client = db) {
   assertCan(actor, "kyc:note");
-  const { body } = parse(noteSchema, input);
+  const { body } = parseInput(noteSchema, input);
   return client.$transaction(async (tx) => {
     const app = await tx.kycApplication.findUnique({ where: { id }, select: { id: true, reference: true, status: true } });
     if (!app) throw new NotFoundError("Application not found");

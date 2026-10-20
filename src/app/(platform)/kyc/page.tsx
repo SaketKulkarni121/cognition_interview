@@ -1,31 +1,15 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Inbox } from "lucide-react";
-import { Avatar, Card, EmptyState, PageHeader, TBody, TD, TH, THead, TR, Table, buttonClasses } from "@/components/ui";
+import { ChevronRight, Inbox } from "lucide-react";
+import { Avatar, Card, EmptyState, PageHeader, Pagination, StatCard, TBody, TD, TH, THead, TR, Table, buttonClasses } from "@/components/ui";
 import { QueueFilters } from "@/components/kyc/queue-filters";
 import { StatusBadge } from "@/components/kyc/status-badge";
 import { requireUser } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
-import { cn, formatDate, timeAgo } from "@/lib/utils";
+import { formatDate, timeAgo } from "@/lib/utils";
 import { getQueueStats, listApplications, listReviewers } from "@/modules/kyc/service";
 import { listQuerySchema } from "@/modules/kyc/schemas";
 
 export const metadata = { title: "KYC Review Queue" };
-
-function StatCard({ label, value, href, active, hint }: { label: string; value: number; href: string; active: boolean; hint: string }) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "rounded-xl border bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md",
-        active ? "border-indigo-400 ring-2 ring-indigo-100" : "border-slate-200",
-      )}
-    >
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
-      <p className="mt-1 text-xs text-slate-400">{hint}</p>
-    </Link>
-  );
-}
 
 export default async function KycQueuePage(props: PageProps<"/kyc">) {
   const user = await requireUser();
@@ -41,7 +25,6 @@ export default async function KycQueuePage(props: PageProps<"/kyc">) {
     listReviewers(user),
   ]);
   const canWork = can(user, "kyc:decide");
-  const pages = Math.max(1, Math.ceil(total / pageSize));
   const pageHref = (p: number) => {
     const sp = new URLSearchParams(flat as Record<string, string>);
     sp.set("page", String(p));
@@ -125,21 +108,7 @@ export default async function KycQueuePage(props: PageProps<"/kyc">) {
             </TBody>
           </Table>
         )}
-        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-slate-500">
-          <span>
-            {total === 0 ? "0 results" : `Showing ${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} of ${total}`}
-          </span>
-          {pages > 1 && (
-            <div className="flex gap-2">
-              <Link aria-disabled={page <= 1} href={pageHref(page - 1)} className={cn(buttonClasses("secondary", "sm"), page <= 1 && "pointer-events-none opacity-50")}>
-                <ChevronLeft className="h-4 w-4" /> Previous
-              </Link>
-              <Link aria-disabled={page >= pages} href={pageHref(page + 1)} className={cn(buttonClasses("secondary", "sm"), page >= pages && "pointer-events-none opacity-50")}>
-                Next <ChevronRight className="h-4 w-4" />
-              </Link>
-            </div>
-          )}
-        </div>
+        <Pagination total={total} page={page} pageSize={pageSize} hrefFor={pageHref} />
       </Card>
     </>
   );
