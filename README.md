@@ -167,6 +167,12 @@ if (await isFeatureEnabled("new_checkout_experience")) { /* new flow */ }   // e
 
 Seed data: 8 fictional flags, including **Instant refunds**, **Fraud detection model v2**, **New checkout experience** (recently switched off in Production with a kill-switch reason) and **Enhanced transaction notifications**. Each has per-environment states and a change history.
 
+## Deploying to Vercel (demo)
+
+Vercel runs the `vercel-build` script. It applies the migrations to a fresh SQLite file (`prisma/dev.db`), seeds the fictional data, and builds the app. `next.config.ts` (`outputFileTracingIncludes`) bundles the seeded file with every server function, and on a cold start `src/lib/db.ts` copies it to `/tmp`, the only writable path on Vercel. You don't need to set `DATABASE_URL`.
+
+This is for demos only. Each serverless instance has its own copy of the data, so changes are not shared between instances and are lost when an instance restarts. A real deployment needs a hosted database such as Postgres (Neon, Vercel Postgres, …).
+
 ## API
 
 All endpoints require a (simulated) session cookie and return JSON errors as `{ "error": { "code", "message", "details?" } }` with `401` / `403` / `404` / `400` / `409` status codes.
