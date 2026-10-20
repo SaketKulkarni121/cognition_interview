@@ -13,22 +13,40 @@ export function QueueFilters({ reviewers, showMine }: { reviewers: Reviewer[]; s
   const pathname = usePathname();
   const params = useSearchParams();
   const [pending, startTransition] = useTransition();
-  const [q, setQ] = useState(params.get("q") ?? "");
+  const urlQ = params.get("q") ?? "";
+  const [q, setQ] = useState(urlQ);
+  const [syncedQ, setSyncedQ] = useState(urlQ);
+  const [pushedQ, setPushedQ] = useState<string | null>(null);
+  if (urlQ !== syncedQ) {
+    // URL changed from outside the search box (Clear, navigation): reflect it.
+    setSyncedQ(urlQ);
+    if (urlQ !== pushedQ) setQ(urlQ);
+    setPushedQ(null);
+  }
+
+  function navigate(search: URLSearchParams) {
+    const qs = search.toString();
+    startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
+  }
 
   function update(patch: Record<string, string | null>) {
-    const next = new URLSearchParams(params.toString());
+    // Read the live URL so a pending debounce never resurrects cleared filters.
+    const next = new URLSearchParams(window.location.search);
     for (const [k, v] of Object.entries(patch)) {
       if (v) next.set(k, v);
       else next.delete(k);
     }
     next.delete("page");
-    startTransition(() => router.replace(`${pathname}?${next.toString()}`, { scroll: false }));
+    if ("q" in patch) setPushedQ(patch.q ?? "");
+    navigate(next);
   }
 
   // Debounced search-as-you-type.
   useEffect(() => {
-    if ((params.get("q") ?? "") === q) return;
-    const t = setTimeout(() => update({ q: q.trim() || null }), 300);
+    if (urlQ === q) return;
+    const t = setTimeout(() => {
+      if ((new URLSearchParams(window.location.search).get("q") ?? "") !== q.trim()) update({ q: q.trim() || null });
+    }, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
@@ -80,7 +98,8 @@ export function QueueFilters({ reviewers, showMine }: { reviewers: Reviewer[]; s
             size="sm"
             onClick={() => {
               setQ("");
-              startTransition(() => router.replace(pathname, { scroll: false }));
+              setPushedQ(null);
+              navigate(new URLSearchParams());
             }}
           >
             <X className="h-4 w-4" /> Clear
