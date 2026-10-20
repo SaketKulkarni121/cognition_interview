@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "export DATABASE_URL=${DATABASE_URL:-file:./dev.db} && prisma generate && prisma migrate reset --force --skip-generate && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
