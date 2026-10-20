@@ -37,6 +37,11 @@ export function HistoryTimeline({ entries }: { entries: Entry[] }) {
                     {" "}to <span className="font-medium text-slate-900">{meta.reviewerName}</span>
                   </>
                 )}
+                {typeof meta.environmentLabel === "string" && (
+                  <>
+                    {" "}in <span className="font-medium text-slate-900">{meta.environmentLabel}</span>
+                  </>
+                )}
               </p>
               <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
                 {formatDateTime(e.createdAt)}

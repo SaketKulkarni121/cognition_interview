@@ -6,10 +6,15 @@ import { requireUser } from "@/lib/auth/session";
 import { can } from "@/lib/auth/permissions";
 import { getQueueStats } from "@/modules/kyc/service";
 import { getDashboardStats } from "@/modules/refunds/service";
+import { getFlagStats } from "@/modules/flags/service";
 
 export default async function HomePage() {
   const user = await requireUser();
-  const [stats, refundStats] = await Promise.all([getQueueStats(user), can(user, "refunds:read") ? getDashboardStats(user) : null]);
+  const [stats, refundStats, flagStats] = await Promise.all([
+    getQueueStats(user),
+    can(user, "refunds:read") ? getDashboardStats(user) : null,
+    can(user, "flags:read") ? getFlagStats(user, "PRODUCTION") : null,
+  ]);
   const pending = (stats.byStatus.SUBMITTED ?? 0) + (stats.byStatus.IN_REVIEW ?? 0);
   const apps = INTERNAL_APPS.filter((a) => a.id !== "home");
 
@@ -36,6 +41,8 @@ export default async function HomePage() {
                   <Badge tone="info">{pending} awaiting review</Badge>
                 ) : app.id === "refunds" && refundStats ? (
                   <Badge tone="info">{refundStats.pending + refundStats.escalated} open</Badge>
+                ) : app.id === "flags" && flagStats ? (
+                  <Badge tone="info">{flagStats.enabled} on in production</Badge>
                 ) : null}
               </div>
               <h2 className="mt-4 font-semibold text-slate-900">{app.name}</h2>

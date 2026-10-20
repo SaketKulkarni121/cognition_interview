@@ -58,13 +58,19 @@ export default async function AuditPage(props: PageProps<"/audit">) {
                     <Badge className="mt-1">{isRole(e.actorRole) ? ROLE_LABELS[e.actorRole] : e.actorRole === "CUSTOMER" ? "Customer" : e.actorRole === "SUPPORT" ? "Support" : e.actorRole}</Badge>
                   </TD>
                   <TD>
-                    <p className="text-slate-700">{describeAuditAction(e.action)}</p>
+                    <p className="text-slate-700">
+                      {describeAuditAction(e.action)}
+                      {(() => {
+                        const env = e.metadata ? (JSON.parse(e.metadata) as { environmentLabel?: unknown }).environmentLabel : undefined;
+                        return typeof env === "string" ? <span className="text-slate-500"> in {env}</span> : null;
+                      })()}
+                    </p>
                     <p className="text-xs text-slate-400">
                       {AUDIT_MODULES[e.module] ?? e.module}
                       {e.entityRef && " · "}
                       {e.entityRef &&
                         (ENTITY_LINKS[e.entityType] ? (
-                          <Link href={ENTITY_LINKS[e.entityType](e.entityId)} className="font-mono text-indigo-600 hover:underline">
+                          <Link href={ENTITY_LINKS[e.entityType](e.entityId, e.entityRef)} className="font-mono text-indigo-600 hover:underline">
                             {e.entityRef}
                           </Link>
                         ) : (

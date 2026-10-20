@@ -9,6 +9,8 @@ import {
   MessageSquare,
   RotateCcw,
   Send,
+  ToggleLeft,
+  ToggleRight,
   UserCheck,
   UserMinus,
   XCircle,
@@ -40,14 +42,19 @@ export const AUDIT_EVENTS: Record<string, AuditEvent> = {
   "refunds.payment.succeeded": { module: "refunds", icon: BadgeCheck, label: "got confirmation that the refund was sent", short: "Refund sent", color: "bg-emerald-100 text-emerald-700" },
   "refunds.payment.failed": { module: "refunds", icon: AlertTriangle, label: "got an error from the payment provider", short: "Refund failed", color: "bg-red-100 text-red-700" },
   "refunds.payment.retried": { module: "refunds", icon: RotateCcw, label: "retried the failed refund", short: "Refund retried", color: "bg-blue-100 text-blue-700" },
+
+  "flags.flag.created": { module: "flags", icon: FilePlus2, label: "created the flag", short: "Flag created", color: slate },
+  "flags.flag.enabled": { module: "flags", icon: ToggleRight, label: "turned the flag on", short: "Turned on", color: "bg-emerald-100 text-emerald-700" },
+  "flags.flag.disabled": { module: "flags", icon: ToggleLeft, label: "turned the flag off", short: "Turned off", color: "bg-slate-200 text-slate-700" },
 };
 
-export const AUDIT_MODULES: Record<string, string> = { kyc: "KYC Review", refunds: "Refunds" };
+export const AUDIT_MODULES: Record<string, string> = { kyc: "KYC Review", refunds: "Refunds", flags: "Feature Flags" };
 
 /** Where an audited entity can be viewed. */
-export const ENTITY_LINKS: Record<string, (id: string) => string> = {
+export const ENTITY_LINKS: Record<string, (id: string, ref: string | null) => string> = {
   KycApplication: (id) => `/kyc/${id}`,
   RefundCase: (id) => `/refunds/${id}`,
+  FeatureFlag: (id, ref) => `/flags/${ref ?? id}`,
 };
 
 export function describeAuditAction(action: string) {

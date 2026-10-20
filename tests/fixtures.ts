@@ -5,6 +5,8 @@ import type { RefundStatus } from "@/modules/refunds/workflow";
 
 export async function resetDb() {
   await db.auditLog.deleteMany();
+  await db.featureFlagEnvironment.deleteMany();
+  await db.featureFlag.deleteMany();
   await db.refundPayout.deleteMany();
   await db.refundDecision.deleteMany();
   await db.refundNote.deleteMany();
@@ -93,6 +95,22 @@ export async function createRefundCase(opts: { status?: RefundStatus; amountRequ
       supportAgentTeam: "Support",
       supportTicketRef: `SUP-T${refundSeq}`,
       transactionId,
+    },
+  });
+}
+
+let flagSeq = 0;
+export async function createFlag(states: { DEVELOPMENT?: boolean; STAGING?: boolean; PRODUCTION?: boolean } = {}) {
+  flagSeq += 1;
+  return db.featureFlag.create({
+    data: {
+      key: `test_flag_${flagSeq}`,
+      name: `Test flag ${flagSeq}`,
+      description: "A flag for tests",
+      ownerTeam: "QA",
+      environments: {
+        create: (["DEVELOPMENT", "STAGING", "PRODUCTION"] as const).map((environment) => ({ environment, enabled: states[environment] ?? false })),
+      },
     },
   });
 }

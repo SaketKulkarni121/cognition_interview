@@ -27,6 +27,7 @@ model User {
   refundNotes          RefundNote[]
   refundDecisions      RefundDecision[]
   refundPayouts        RefundPayout[]
+  flagChanges          FeatureFlagEnvironment[]
 }
 
 model KycApplication {
@@ -217,6 +218,37 @@ model RefundPayout {
 
   case        RefundCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
   requestedBy User       @relation(fields: [requestedById], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Feature flags module. Simple boolean on/off per environment.
+// ---------------------------------------------------------------------------
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g. "instant_refunds"; what application code queries
+  name        String
+  description String
+  ownerTeam   String
+  createdAt   DateTime @default(now())
+
+  environments FeatureFlagEnvironment[]
+}
+
+model FeatureFlagEnvironment {
+  id          String   @id @default(cuid())
+  flagId      String
+  environment String // DEVELOPMENT | STAGING | PRODUCTION
+  enabled     Boolean  @default(false)
+  version     Int      @default(1) // optimistic concurrency guard
+  updatedAt   DateTime @default(now())
+  updatedById String?
+
+  flag      FeatureFlag @relation(fields: [flagId], references: [id], onDelete: Cascade)
+  updatedBy User?       @relation(fields: [updatedById], references: [id])
+
+  @@unique([flagId, environment])
+  @@index([environment])
 }
 
 // Append-only, platform-wide audit trail shared by every internal app.

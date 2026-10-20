@@ -1,4 +1,4 @@
-import { ClipboardCheck, LayoutGrid, ScrollText, Scale, Banknote, Receipt, type LucideIcon } from "lucide-react";
+import { ClipboardCheck, LayoutGrid, ScrollText, Scale, Banknote, Receipt, ToggleRight, type LucideIcon } from "lucide-react";
 import type { Permission } from "@/lib/auth/permissions";
 
 /**
@@ -34,6 +34,15 @@ export const INTERNAL_APPS: InternalApp[] = [
     href: "/refunds",
     icon: Receipt,
     permission: "refunds:read",
+    status: "live",
+  },
+  {
+    id: "flags",
+    name: "Feature Flags",
+    description: "Turn features on or off per environment without redeploying.",
+    href: "/flags",
+    icon: ToggleRight,
+    permission: "flags:read",
     status: "live",
   },
   {
