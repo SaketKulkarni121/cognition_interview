@@ -7,3 +7,6 @@ export * from "./empty-state";
 export * from "./form";
 export * from "./page-header";
 export * from "./table";
+export * from "./description-list";
+export * from "./pagination";
+export * from "./stat-card";

@@ -5,11 +5,24 @@ import { useRouter } from "next/navigation";
 import { Loader2, MessageSquare } from "lucide-react";
 import { Avatar, Button, Card, CardBody, CardHeader, Textarea } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
-import { apiPost } from "./api-client";
+import { apiPost } from "@/lib/api-client";
 
 type Note = { id: string; body: string; createdAt: string; author: { name: string; title: string | null } };
 
-export function NotesPanel({ applicationId, notes, canNote }: { applicationId: string; notes: Note[]; canNote: boolean }) {
+/** Internal notes list + composer. POSTs { body } to `endpoint`. */
+export function NotesPanel({
+  endpoint,
+  notes,
+  canNote,
+  title = "Reviewer notes",
+  description = "Internal notes for other reviewers. Not shared with the customer.",
+}: {
+  endpoint: string;
+  notes: Note[];
+  canNote: boolean;
+  title?: string;
+  description?: string;
+}) {
   const router = useRouter();
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,7 +34,7 @@ export function NotesPanel({ applicationId, notes, canNote }: { applicationId: s
     setBusy(true);
     setError(null);
     try {
-      await apiPost(`/api/kyc/applications/${applicationId}/notes`, { body });
+      await apiPost(endpoint, { body });
       setBody("");
       router.refresh();
     } catch (err) {
@@ -33,7 +46,7 @@ export function NotesPanel({ applicationId, notes, canNote }: { applicationId: s
 
   return (
     <Card>
-      <CardHeader title="Reviewer notes" description="Internal notes for other reviewers. Not shared with the customer." />
+      <CardHeader title={title} description={description} />
       <CardBody className="space-y-4">
         {canNote && (
           <form onSubmit={submit} className="space-y-2">

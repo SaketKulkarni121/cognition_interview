@@ -18,9 +18,9 @@ export const ROLE_LABELS: Record<Role, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  ADMIN: "Full access. Can assign any reviewer and decide escalated applications.",
-  ANALYST: "Reviews applications assigned to them and records decisions.",
-  VIEWER: "Read-only access to applications and the audit log.",
+  ADMIN: "Full access. Assigns work and makes the final call on escalated cases.",
+  ANALYST: "Reviews KYC applications and refund requests and records decisions.",
+  VIEWER: "Read-only access to cases and the audit log.",
 };
 
 /**
@@ -35,6 +35,11 @@ const PERMISSIONS = {
   "kyc:decide:escalated": ["ADMIN"],
   "kyc:decide:unassigned": ["ADMIN"],
   "kyc:note": ["ADMIN", "ANALYST"],
+  "refunds:read": ["ADMIN", "ANALYST", "VIEWER"],
+  "refunds:decide": ["ADMIN", "ANALYST"],
+  "refunds:decide:escalated": ["ADMIN"],
+  "refunds:note": ["ADMIN", "ANALYST"],
+  "refunds:payment:retry": ["ADMIN"],
   "audit:read": ["ADMIN", "VIEWER"],
 } as const satisfies Record<string, readonly Role[]>;
 

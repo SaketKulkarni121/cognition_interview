@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Lock, ScrollText } from "lucide-react";
 import { Badge, Card, EmptyState, PageHeader, TBody, TD, TH, THead, TR, Table, buttonClasses } from "@/components/ui";
-import { StatusBadge } from "@/components/kyc/status-badge";
-import { describeAuditAction } from "@/components/kyc/history-timeline";
+import { ModuleStatusBadge } from "@/components/workflow/status-badge";
+import { AUDIT_MODULES, ENTITY_LINKS, describeAuditAction } from "@/components/audit/events";
 import { AuditFilters } from "./audit-filters";
 import { requireUser } from "@/lib/auth/session";
 import { can, ROLE_LABELS, isRole } from "@/lib/auth/permissions";
@@ -23,7 +23,7 @@ export default async function AuditPage(props: PageProps<"/audit">) {
   }
   const sp = await props.searchParams;
   const get = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
-  const { items, total, page, pageSize } = await listAuditLog(db, { action: get("action"), q: get("q"), page: Number(get("page") ?? 1) || 1 });
+  const { items, total, page, pageSize } = await listAuditLog(db, { module: get("module"), action: get("action"), q: get("q"), page: Number(get("page") ?? 1) || 1 });
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const href = (p: number) => {
     const next = new URLSearchParams(Object.entries(sp).filter(([, v]) => typeof v === "string") as [string, string][]);
@@ -55,23 +55,30 @@ export default async function AuditPage(props: PageProps<"/audit">) {
                   <TD className="whitespace-nowrap text-xs text-slate-500">{formatDateTime(e.createdAt)}</TD>
                   <TD>
                     <p className="whitespace-nowrap font-medium text-slate-900">{e.actorName}</p>
-                    <Badge className="mt-1">{isRole(e.actorRole) ? ROLE_LABELS[e.actorRole] : e.actorRole === "CUSTOMER" ? "Customer" : e.actorRole}</Badge>
+                    <Badge className="mt-1">{isRole(e.actorRole) ? ROLE_LABELS[e.actorRole] : e.actorRole === "CUSTOMER" ? "Customer" : e.actorRole === "SUPPORT" ? "Support" : e.actorRole}</Badge>
                   </TD>
                   <TD>
                     <p className="text-slate-700">{describeAuditAction(e.action)}</p>
-                    {e.entityRef && (
-                      <Link href={`/kyc/${e.entityId}`} className="font-mono text-xs text-indigo-600 hover:underline">
-                        {e.entityRef}
-                      </Link>
-                    )}
+                    <p className="text-xs text-slate-400">
+                      {AUDIT_MODULES[e.module] ?? e.module}
+                      {e.entityRef && " · "}
+                      {e.entityRef &&
+                        (ENTITY_LINKS[e.entityType] ? (
+                          <Link href={ENTITY_LINKS[e.entityType](e.entityId)} className="font-mono text-indigo-600 hover:underline">
+                            {e.entityRef}
+                          </Link>
+                        ) : (
+                          <span className="font-mono">{e.entityRef}</span>
+                        ))}
+                    </p>
                   </TD>
                   <TD className="hidden md:table-cell">
                     {e.fromStatus && e.toStatus && e.fromStatus !== e.toStatus ? (
                       <span className="flex flex-wrap items-center gap-1">
-                        <StatusBadge status={e.fromStatus} /> → <StatusBadge status={e.toStatus} />
+                        <ModuleStatusBadge module={e.module} status={e.fromStatus} /> → <ModuleStatusBadge module={e.module} status={e.toStatus} />
                       </span>
                     ) : e.toStatus && !e.fromStatus ? (
-                      <StatusBadge status={e.toStatus} />
+                      <ModuleStatusBadge module={e.module} status={e.toStatus} />
                     ) : (
                       <span className="text-slate-400">—</span>
                     )}

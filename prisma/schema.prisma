@@ -1,6 +1,6 @@
 // Internal Operations Platform — data model.
 // SQLite does not support native enums, so status/role/action columns are
-// strings validated in the application layer (see src/modules/kyc/workflow.ts
+// strings validated in the application layer (see src/modules/*/workflow.ts
 // and src/lib/auth/permissions.ts).
 
 generator client {
@@ -24,6 +24,9 @@ model User {
   notes                KycNote[]
   decisions            KycDecision[]
   auditLogs            AuditLog[]
+  refundNotes          RefundNote[]
+  refundDecisions      RefundDecision[]
+  refundPayouts        RefundPayout[]
 }
 
 model KycApplication {
@@ -107,6 +110,113 @@ model KycDecision {
   reviewer    User           @relation(fields: [reviewerId], references: [id])
 
   @@index([applicationId])
+}
+
+// ---------------------------------------------------------------------------
+// Refunds module. Money is stored as integer minor units (cents).
+// ---------------------------------------------------------------------------
+
+model PaymentTransaction {
+  id            String   @id @default(cuid())
+  reference     String   @unique
+  merchantName  String
+  description   String
+  orderNumber   String?
+  amount        Int
+  taxAmount     Int      @default(0)
+  currency      String   @default("USD")
+  paymentMethod String
+  purchasedAt   DateTime
+  lineItems     String // JSON: [{ name, quantity, unitAmount }]
+
+  refundCases RefundCase[]
+}
+
+model RefundCase {
+  id               String    @id @default(cuid())
+  reference        String    @unique
+  status           String    @default("PENDING") // PENDING | ESCALATED | APPROVED | REJECTED
+  customerName     String
+  customerEmail    String
+  customerId       String
+  customerSince    DateTime
+  amountRequested  Int
+  currency         String    @default("USD")
+  reasonCategory   String
+  complaint        String
+  channel          String // EMAIL | CHAT | PHONE
+  supportAgentName String
+  supportAgentTeam String
+  supportTicketRef String
+  eligibilityNote  String?
+  submittedAt      DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  decidedAt        DateTime?
+
+  transactionId String
+  transaction   PaymentTransaction @relation(fields: [transactionId], references: [id])
+
+  notes     RefundNote[]
+  decisions RefundDecision[]
+  payout    RefundPayout?
+
+  @@index([status])
+  @@index([submittedAt])
+  @@index([transactionId])
+}
+
+model RefundNote {
+  id          String   @id @default(cuid())
+  caseId      String
+  kind        String // SUPPORT | REVIEWER
+  authorId    String?
+  authorName  String
+  authorTitle String?
+  body        String
+  createdAt   DateTime @default(now())
+
+  case   RefundCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  author User?      @relation(fields: [authorId], references: [id])
+
+  @@index([caseId])
+}
+
+model RefundDecision {
+  id         String   @id @default(cuid())
+  caseId     String
+  reviewerId String
+  action     String // APPROVE | REJECT | ESCALATE
+  fromStatus String
+  toStatus   String
+  reason     String
+  createdAt  DateTime @default(now())
+
+  case     RefundCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  reviewer User       @relation(fields: [reviewerId], references: [id])
+
+  @@index([caseId])
+}
+
+// One row per executed refund. The unique caseId and idempotencyKey make it
+// impossible to record (or send) a second refund for the same case.
+model RefundPayout {
+  id               String    @id @default(cuid())
+  caseId           String    @unique
+  idempotencyKey   String    @unique
+  provider         String
+  providerRefundId String?
+  amount           Int
+  currency         String
+  status           String // PROCESSING | SUCCEEDED | FAILED
+  attempts         Int       @default(0)
+  lastError        String?
+  requestedById    String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  completedAt      DateTime?
+
+  case        RefundCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  requestedBy User       @relation(fields: [requestedById], references: [id])
 }
 
 // Append-only, platform-wide audit trail shared by every internal app.

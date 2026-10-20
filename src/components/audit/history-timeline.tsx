@@ -1,12 +1,13 @@
-import { ArrowRight, CheckCircle2, FileInput, HelpCircle, MessageSquare, RotateCcw, UserCheck, UserMinus, XCircle, ArrowUpCircle, type LucideIcon } from "lucide-react";
+import { ArrowRight, FileInput } from "lucide-react";
+import { ModuleStatusBadge } from "@/components/workflow/status-badge";
 import { formatDateTime } from "@/lib/utils";
-import { StatusBadge } from "./status-badge";
+import { AUDIT_EVENTS } from "./events";
 
 type Entry = {
   id: string;
   createdAt: Date;
   actorName: string;
-  actorRole: string;
+  module: string;
   action: string;
   fromStatus: string | null;
   toStatus: string | null;
@@ -14,27 +15,12 @@ type Entry = {
   metadata: string | null;
 };
 
-const EVENTS: Record<string, { icon: LucideIcon; label: string; color: string }> = {
-  "kyc.application.submitted": { icon: FileInput, label: "submitted the application", color: "bg-slate-100 text-slate-600" },
-  "kyc.application.assigned": { icon: UserCheck, label: "assigned the application", color: "bg-blue-100 text-blue-700" },
-  "kyc.application.unassigned": { icon: UserMinus, label: "removed the assigned reviewer", color: "bg-slate-100 text-slate-600" },
-  "kyc.application.approved": { icon: CheckCircle2, label: "approved the application", color: "bg-emerald-100 text-emerald-700" },
-  "kyc.application.rejected": { icon: XCircle, label: "rejected the application", color: "bg-red-100 text-red-700" },
-  "kyc.application.info_requested": { icon: HelpCircle, label: "requested more information", color: "bg-amber-100 text-amber-700" },
-  "kyc.application.escalated": { icon: ArrowUpCircle, label: "escalated to an Admin", color: "bg-violet-100 text-violet-700" },
-  "kyc.application.review_resumed": { icon: RotateCcw, label: "marked information as received", color: "bg-blue-100 text-blue-700" },
-  "kyc.note.added": { icon: MessageSquare, label: "added a note", color: "bg-slate-100 text-slate-600" },
-};
-
-export function describeAuditAction(action: string) {
-  return EVENTS[action]?.label ?? action;
-}
-
+/** Renders audit-log entries for one record as a vertical timeline. */
 export function HistoryTimeline({ entries }: { entries: Entry[] }) {
   return (
     <ol className="relative space-y-5">
       {entries.map((e, i) => {
-        const ev = EVENTS[e.action] ?? { icon: FileInput, label: e.action, color: "bg-slate-100 text-slate-600" };
+        const ev = AUDIT_EVENTS[e.action] ?? { icon: FileInput, label: e.action, color: "bg-slate-100 text-slate-600" };
         const meta = e.metadata ? (JSON.parse(e.metadata) as Record<string, unknown>) : {};
         const Icon = ev.icon;
         return (
@@ -56,11 +42,13 @@ export function HistoryTimeline({ entries }: { entries: Entry[] }) {
                 {formatDateTime(e.createdAt)}
                 {e.fromStatus && e.toStatus && e.fromStatus !== e.toStatus && (
                   <span className="inline-flex items-center gap-1">
-                    <StatusBadge status={e.fromStatus} /> <ArrowRight className="h-3 w-3" /> <StatusBadge status={e.toStatus} />
+                    <ModuleStatusBadge module={e.module} status={e.fromStatus} /> <ArrowRight className="h-3 w-3" /> <ModuleStatusBadge module={e.module} status={e.toStatus} />
                   </span>
                 )}
+                {typeof meta.providerRefundId === "string" && <span className="font-mono">{meta.providerRefundId}</span>}
               </p>
               {e.reason && <blockquote className="mt-2 rounded-md border-l-2 border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">{e.reason}</blockquote>}
+              {typeof meta.error === "string" && <blockquote className="mt-2 rounded-md border-l-2 border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{meta.error}</blockquote>}
             </div>
           </li>
         );
